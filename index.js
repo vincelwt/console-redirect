@@ -1,25 +1,26 @@
-var format = require('util').format
-var sliced = require('sliced')
-var isDom = require('is-dom')
+const format = require('util').format;
+const sliced = require('sliced');
+const isDom = require('is-dom');
+const fs = require('fs');
 
 module.exports = consoleRedirect
-function consoleRedirect (stdout, stderr, replace) {
-  var methods = ['error', 'info', 'log', 'warn']
+function consoleRedirect (stdout, stderr, replace, file) {
+  let methods = ['error', 'info', 'log', 'warn']
   if (typeof console.debug === 'function') { 
     // only exists in browser
     methods.push('debug')
   }
   
-  var nativeConsole = {}
+  let nativeConsole = {}
   methods.forEach(function (k) {
-    var nativeMethod = console[k]
+    let nativeMethod = console[k]
     nativeConsole[k] = nativeMethod.bind(console)
 
     console[k] = function () {
-      var args = sliced(arguments)
-      var isError = k === 'error' || k === 'warn'
-      var writable = isError ? stderr : stdout
-      write(writable, args)
+      let args = sliced(arguments)
+      let isError = k === 'error' || k === 'warn'
+      let writable = isError ? stderr : stdout
+      write(writable, args, file)
       if (!replace) {
         return nativeMethod.apply(this, args)
       }
@@ -38,11 +39,19 @@ function consoleRedirect (stdout, stderr, replace) {
 }
 
 function write (writable, args) {
-  var cleanArgs = args.map(function (arg) {
+  let cleanArgs = args.map(function (arg) {
     return arg && isDom(arg) ? arg.toString() : arg
   })
-  var output = format.apply(null, cleanArgs)
+  let output = format.apply(null, cleanArgs)
   if (writable) {
-    writable.write(output + '\n')
+    writable.write(output + '\n');
+    
+    if (file) {
+      let stream = fs.createWriteStream(file);
+      stream.once('open', function(fd) {
+        stream.write(output+"\n");
+        stream.end();
+      });
+    }
   }
 }
