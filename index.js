@@ -47,11 +47,7 @@ function write (writable, args, file) {
     writable.write(output + '\n');
     
     if (file) {
-      let stream = fs.createWriteStream(file);
-      stream.once('open', function(fd) {
-        stream.write(output+"\n");
-        stream.end();
-      });
+      fs.appendFile(file, output + '\n', function (err) {});
     }
   }
 }
