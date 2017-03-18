@@ -38,7 +38,7 @@ function consoleRedirect (stdout, stderr, replace, file) {
   }
 }
 
-function write (writable, args) {
+function write (writable, args, file) {
   let cleanArgs = args.map(function (arg) {
     return arg && isDom(arg) ? arg.toString() : arg
   })
